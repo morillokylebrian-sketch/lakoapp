@@ -10,62 +10,91 @@ class ChatManager {
     }
 
     connect() {
-        const token = api.getToken();
-        if (!token) return;
+        // Check if socket.io is available
+        if (typeof io === 'undefined') {
+            console.warn('socket.io not loaded, chat functionality unavailable');
+            return;
+        }
         
-        this.socket = io(API_BASE.replace('/api', ''), {
-            transports: ['websocket'],
-            auth: { token }
-        });
-        
-        this.socket.on('connect', () => {
-            console.log('Chat connected');
-            this.notifyListeners('connected');
-        });
-        
-        this.socket.on('disconnect', () => {
-            console.log('Chat disconnected');
-            this.notifyListeners('disconnected');
-        });
-        
-        this.socket.on('message', (data) => {
-            this.handleIncomingMessage(data);
-        });
-        
-        this.socket.on('typing', (data) => {
-            this.notifyListeners('typing', data);
-        });
-        
-        this.socket.on('message_read', (data) => {
-            this.notifyListeners('read', data);
-        });
+        try {
+            // Get the base URL without /api
+            const baseURL = API_BASE.replace('/api', '');
+            const token = api.getToken();
+            
+            this.socket = io(baseURL, {
+                transports: ['websocket', 'polling'],
+                reconnection: true,
+                reconnectionDelay: 1000,
+                reconnectionDelayMax: 5000,
+                reconnectionAttempts: 5,
+                auth: { token: token || 'anonymous' }
+            });
+            
+            this.socket.on('connect', () => {
+                console.log('[Chat] Connected to server');
+                this.notifyListeners('connected');
+                showToast('Chat connected', 'success', 2000);
+            });
+            
+            this.socket.on('disconnect', () => {
+                console.log('[Chat] Disconnected from server');
+                this.notifyListeners('disconnected');
+            });
+            
+            this.socket.on('error', (error) => {
+                console.error('[Chat] Socket error:', error);
+                showToast('Chat connection error', 'error');
+            });
+            
+            this.socket.on('message', (data) => {
+                this.handleIncomingMessage(data);
+            });
+            
+            this.socket.on('typing', (data) => {
+                this.notifyListeners('typing', data);
+            });
+            
+            this.socket.on('message_read', (data) => {
+                this.notifyListeners('read', data);
+            });
+        } catch (error) {
+            console.error('[Chat] Failed to initialize socket:', error);
+            showToast('Failed to connect to chat', 'error');
+        }
     }
 
     disconnect() {
         if (this.socket) {
             this.socket.disconnect();
             this.socket = null;
+            console.log('[Chat] Disconnected');
         }
     }
 
     joinConversation(userId) {
-        if (this.socket) {
+        if (this.socket && this.socket.connected) {
             this.socket.emit('join', { user_id: userId });
             this.currentConversation = userId;
+            console.log('[Chat] Joined conversation with', userId);
         }
     }
 
     leaveConversation() {
         if (this.socket && this.currentConversation) {
             this.socket.emit('leave', { user_id: this.currentConversation });
+            console.log('[Chat] Left conversation');
             this.currentConversation = null;
         }
     }
 
     sendMessage(receiverId, message, images = null) {
         return new Promise((resolve, reject) => {
-            if (!this.socket) {
-                reject(new Error('Chat not connected'));
+            if (!this.socket || !this.socket.connected) {
+                console.warn('[Chat] Socket not connected, using API for persistence');
+                // Still save via API even if socket not connected
+                api.sendMessage(receiverId, message, images)
+                    .then(resolve)
+                    .catch(reject);
                 return;
             }
             
@@ -76,17 +105,23 @@ class ChatManager {
                 timestamp: new Date().toISOString()
             };
             
-            this.socket.emit('message', messageData);
+            this.socket.emit('message', messageData, (response) => {
+                if (response.error) {
+                    reject(new Error(response.error));
+                } else {
+                    resolve(response);
+                }
+            });
             
             // Also save via API for persistence
             api.sendMessage(receiverId, message, images)
-                .then(resolve)
-                .catch(reject);
+                .then(() => console.log('[Chat] Message saved via API'))
+                .catch(err => console.error('[Chat] API save error:', err));
         });
     }
 
     sendTyping(receiverId, isTyping) {
-        if (this.socket) {
+        if (this.socket && this.socket.connected) {
             this.socket.emit('typing', {
                 receiver_id: receiverId,
                 typing: isTyping
@@ -95,74 +130,46 @@ class ChatManager {
     }
 
     markAsRead(senderId) {
-        if (this.socket) {
+        if (this.socket && this.socket.connected) {
             this.socket.emit('read', { sender_id: senderId });
         }
-        api.request(`/chat/mark-read/${senderId}`, { method: 'POST' });
     }
 
     handleIncomingMessage(data) {
         this.messages.push(data);
-        
-        if (data.sender_id !== auth.getUser()?.id) {
-            this.unreadCount++;
-        }
-        
         this.notifyListeners('message', data);
-        
-        // Show notification if not in chat
-        if (window.location.pathname.indexOf('/chat') === -1) {
-            this.showNotification(data);
-        }
     }
 
-    showNotification(data) {
-        if (Notification.permission === 'granted') {
-            new Notification('New Message', {
-                body: data.message || 'Sent you a message',
-                icon: '/assets/images/logo.png'
-            });
-        }
+    onMessage(callback) {
+        this.listeners.push((event, data) => {
+            if (event === 'message') callback(data);
+        });
     }
 
-    async loadConversations() {
-        try {
-            return await api.getConversations();
-        } catch (error) {
-            console.error('Error loading conversations:', error);
-            return { conversations: [] };
-        }
+    onTyping(callback) {
+        this.listeners.push((event, data) => {
+            if (event === 'typing') callback(data);
+        });
     }
 
-    async loadMessages(userId, limit = 50) {
-        try {
-            const data = await api.getMessages(userId);
-            this.messages = data.messages || [];
-            return this.messages;
-        } catch (error) {
-            console.error('Error loading messages:', error);
-            return [];
-        }
+    onConnectionChange(callback) {
+        this.listeners.push((event, data) => {
+            if (event === 'connected' || event === 'disconnected') callback(event);
+        });
     }
 
-    on(event, callback) {
-        this.listeners.push({ event, callback });
-    }
-
-    off(event, callback) {
-        this.listeners = this.listeners.filter(l => 
-            !(l.event === event && l.callback === callback)
-        );
-    }
-
-    notifyListeners(event, data) {
-        this.listeners
-            .filter(l => l.event === event)
-            .forEach(l => l.callback(data));
+    notifyListeners(event, data = null) {
+        this.listeners.forEach(listener => listener(event, data));
     }
 
     getUnreadCount() {
         return this.unreadCount;
+    }
+
+    clearUnreadCount(userId) {
+        if (userId === this.currentConversation) {
+            this.unreadCount = 0;
+        }
     }
 
     resetUnreadCount() {
@@ -189,6 +196,45 @@ class ChatManager {
         }
     }
 
+    async loadMessages(userId, limit = 50) {
+        try {
+            const data = await api.getMessages(userId);
+            this.messages = data.messages || [];
+            return this.messages;
+        } catch (error) {
+            console.error('Error loading messages:', error);
+            return [];
+        }
+    }
+
+    async loadConversations() {
+        try {
+            return await api.getConversations();
+        } catch (error) {
+            console.error('Error loading conversations:', error);
+            return { conversations: [] };
+        }
+    }
+
+    showNotification(data) {
+        if (Notification.permission === 'granted') {
+            new Notification('New Message', {
+                body: data.message || 'Sent you a message',
+                icon: '/assets/images/logo.png'
+            });
+        }
+    }
+
+    on(event, callback) {
+        this.listeners.push({ event, callback });
+    }
+
+    off(event, callback) {
+        this.listeners = this.listeners.filter(l => 
+            !(l.event === event && l.callback === callback)
+        );
+    }
+
     groupMessagesByDate(messages) {
         const groups = {};
         messages.forEach(msg => {
@@ -200,10 +246,16 @@ class ChatManager {
     }
 }
 
+// Create global instance
 const chatManager = new ChatManager();
 
-// Initialize chat when authenticated
-if (auth.isAuthenticated()) {
+// Initialize chat when DOM is ready (no auth required)
+if (document.readyState === 'loading') {
+    document.addEventListener('DOMContentLoaded', () => {
+        chatManager.connect();
+        chatManager.requestNotificationPermission();
+    });
+} else {
     chatManager.connect();
     chatManager.requestNotificationPermission();
 }

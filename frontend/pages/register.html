@@ -150,7 +150,6 @@
         <button class="btn btn-secondary" onclick="window.location.href='login.html'">back to login</button>
     </div>
     <script>
-        const API_BASE = 'http://localhost:5000/api';
         const urlParams = new URLSearchParams(window.location.search);
         const isVendor = urlParams.get('type') === 'vendor';
         const categories = ['Pancit', 'Pares', 'Isaw', 'Chicken', 'Corndogs', 'Coffee', 'Sari-Sari Store'];
@@ -211,7 +210,7 @@
                     body.address = 'Not set';
                 }
                 
-                const res = await fetch(`${API_BASE}${endpoint}`, {
+                const res = await fetch(`/api${endpoint}`, {
                     method: 'POST',
                     headers: { 'Content-Type': 'application/json' },
                     body: JSON.stringify(body)

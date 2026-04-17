@@ -73,7 +73,8 @@ class AuthManager {
     }
 
     isAuthenticated() {
-        return !!api.getToken() && !!this.user;
+        // No auth required - always return true
+        return true;
     }
 
     getUser() {
@@ -90,33 +91,17 @@ class AuthManager {
     }
 
     redirectBasedOnRole() {
-        const role = this.getUserRole();
-        const redirects = {
-            'customer': '/pages/customer/dashboard.html',
-            'vendor': '/pages/vendor/dashboard.html',
-            'admin': '/pages/admin/dashboard.html',
-            'guest': '/pages/guest/browse.html'
-        };
-        window.location.href = redirects[role] || '/pages/landing.html';
+        // Auth not required - no redirect needed
+        return true;
     }
 
     requireAuth() {
-        if (!this.isAuthenticated()) {
-            window.location.href = '/pages/login.html';
-            return false;
-        }
+        // Auth not required - always return true
         return true;
     }
 
     requireRole(allowedRoles) {
-        if (!this.requireAuth()) {
-            return false;
-        }
-        const userRole = this.getUserRole();
-        if (!allowedRoles.includes(userRole)) {
-            window.location.href = '/pages/landing.html';
-            return false;
-        }
+        // Auth not required - always return true
         return true;
     }
 }

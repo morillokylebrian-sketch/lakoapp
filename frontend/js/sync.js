@@ -118,5 +118,8 @@ class SyncService {
     }
 }
 
+// Create global instance
+const sync = new SyncService();
+
 const syncService = new SyncService();
 syncService.startPeriodicCache();

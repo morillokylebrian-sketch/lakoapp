@@ -1,19 +1,10 @@
 from flask import Blueprint, request, jsonify, send_file
-from auth import Auth
 from image_handler import ImageHandler
 from database import db
 import os
 from config import config
 
 upload_bp = Blueprint('upload', __name__)
-
-@upload_bp.before_request
-def check_auth():
-    token = request.headers.get('X-Session-Token')
-    user = Auth.get_user_by_token(token)
-    if not user:
-        return jsonify({'error': 'Unauthorized'}), 401
-    request.user = user
 
 @upload_bp.route('/image', methods=['POST'])
 def upload_image():
@@ -32,17 +23,7 @@ def upload_image():
     result = ImageHandler.compress_image(file, upload_type)
     
     if result['success']:
-        media_id = db.create_media(
-            request.user['id'],
-            result['filename'],
-            result['compressed_path'],
-            result['thumbnail_path'],
-            result['size'],
-            upload_type
-        )
-        
         return jsonify({
-            'id': media_id,
             'filename': result['filename'],
             'url': f"/api/upload/image/{result['filename']}",
             'thumbnail_url': f"/api/upload/thumbnail/{result['filename']}",

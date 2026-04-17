@@ -59,13 +59,24 @@ class ImageHandler {
         formData.append('file', file);
         formData.append('type', type);
         
-        const response = await fetch('/api/upload/image', {
-            method: 'POST',
-            headers: { 'X-Session-Token': api.getToken() },
-            body: formData
-        });
-        
-        return response.json();
+        try {
+            const response = await fetch(`${API_BASE}/upload/image`, {
+                method: 'POST',
+                headers: { 'X-Session-Token': api.getToken() },
+                body: formData
+            });
+            
+            const data = await response.json();
+            
+            if (!response.ok) {
+                throw new Error(data.error || 'Upload failed');
+            }
+            
+            return data;
+        } catch (error) {
+            console.error('Image upload error:', error);
+            throw error;
+        }
     }
 
     async uploadMultipleImages(files, type = 'general') {
@@ -80,13 +91,24 @@ class ImageHandler {
         }
         formData.append('type', type);
         
-        const response = await fetch('/api/upload/images', {
-            method: 'POST',
-            headers: { 'X-Session-Token': api.getToken() },
-            body: formData
-        });
-        
-        return response.json();
+        try {
+            const response = await fetch(`${API_BASE}/upload/images`, {
+                method: 'POST',
+                headers: { 'X-Session-Token': api.getToken() },
+                body: formData
+            });
+            
+            const data = await response.json();
+            
+            if (!response.ok) {
+                throw new Error(data.error || 'Upload failed');
+            }
+            
+            return data;
+        } catch (error) {
+            console.error('Multiple images upload error:', error);
+            throw error;
+        }
     }
 
     createThumbnail(file, size = 200) {

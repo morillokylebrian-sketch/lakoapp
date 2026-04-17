@@ -101,7 +101,15 @@
         <div class="admin-link" onclick="goToAdmin()">admin access</div>
     </div>
     <script>
-        const API_BASE = 'http://localhost:5000/api';
+        // Dynamic API base for both localhost and 127.0.0.1
+        const getAPIBase = () => {
+            const hostname = window.location.hostname;
+            const port = window.location.port || '5000';
+            const host = (hostname === 'localhost' || hostname === '127.0.0.1') ? hostname : 'localhost';
+            return `http://${host}:${port}/api`;
+        };
+        const API_BASE = getAPIBase();
+        
         function selectRole(role) { localStorage.setItem('user_role', role); window.location.href = '/pages/login.html'; }
         function guestMode() { window.location.href = '/pages/guest/browse.html'; }
         function goToAdmin() { window.location.href = '/pages/admin/login.html'; }

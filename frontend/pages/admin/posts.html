@@ -63,7 +63,7 @@ document.addEventListener('DOMContentLoaded', loadPosts);
 
 async function loadPosts() {
     try {
-        const data = await api.get_all_posts();
+        const data = await api.request('/admin/posts');
         allPosts = data.posts || [];
         renderPosts();
     } catch (error) {

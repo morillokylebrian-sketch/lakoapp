@@ -3,102 +3,96 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Lako - Admin Access</title>
-    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
-    <link rel="stylesheet" href="/css/universal.css">
+    <title>Lako - Admin Login</title>
     <style>
-    :root {
-        --primary: #0f5c2f;
-        --primary-dark: #0a4a25;
-        --secondary: #5a6e5a;
-        --background: linear-gradient(135deg, #1a2a1f 0%, #0a3b1a 100%);
-        --surface: rgba(255, 255, 255, 0.95);
-        --text-primary: #1a2a1f;
-        --text-secondary: #5a6e5a;
-        --border: rgba(0, 0, 0, 0.1);
-        --shadow: 0 8px 32px rgba(0, 0, 0, 0.15);
-        --radius-lg: 48px;
-    }
-    * { margin: 0; padding: 0; box-sizing: border-box; }
-    body {
-        font-family: 'Inter', -apple-system, BlinkMacSystemFont, sans-serif;
-        background: var(--background);
-        min-height: 100vh;
-        display: flex;
-        align-items: center;
-        justify-content: center;
-        padding: 20px;
-    }
-    .auth-card {
-        background: var(--surface);
-        backdrop-filter: blur(20px);
-        border-radius: var(--radius-lg);
-        padding: 48px;
-        width: 100%;
-        max-width: 420px;
-        text-align: center;
-        box-shadow: var(--shadow);
-        border: 1px solid rgba(255, 255, 255, 0.2);
-    }
-    .admin-icon {
-        width: 80px;
-        height: 80px;
-        margin: 0 auto 24px;
-        background: var(--primary);
-        border-radius: 50%;\n        display: flex;\n        align-items: center;\n        justify-content: center;\n        font-size: 40px;\n        color: white;\n    }\n    h1 { font-size: 28px; color: var(--text-primary); margin-bottom: 8px; font-weight: 700; }\n    .subtitle { color: var(--text-secondary); font-size: 14px; margin-bottom: 36px; font-weight: 500; }\n    .form-group { margin-bottom: 20px; text-align: left; }\n    label { display: block; font-size: 13px; font-weight: 600; color: var(--text-primary); margin-bottom: 8px; }\n    input {\n        width: 100%;\n        padding: 14px 18px;\n        background: rgba(0, 0, 0, 0.02);\n        border: 1px solid var(--border);\n        border-radius: 28px;\n        font-size: 15px;\n        outline: none;\n        transition: border-color 0.2s;\n        font-family: inherit;\n    }\n    input:focus { border-color: var(--primary); background: rgba(0, 0, 0, 0.01); }\n    input::placeholder { color: #aaa; }\n    .btn {\n        width: 100%;\n        padding: 14px;\n        border: none;\n        border-radius: 32px;\n        font-size: 15px;\n        font-weight: 600;\n        cursor: pointer;\n        background: var(--primary);\n        color: white;\n        transition: all 0.2s;\n    }\n    .btn:hover { background: var(--primary-dark); transform: translateY(-1px); box-shadow: 0 4px 12px rgba(15, 92, 47, 0.3); }\n    .error {\n        background: rgba(220, 38, 38, 0.1);\n        color: #dc2626;\n        padding: 12px;\n        border-radius: 24px;\n        margin-bottom: 20px;\n        font-size: 13px;\n        display: none;\n        border: 1px solid rgba(220, 38, 38, 0.2);\n    }\n    .back-link { \n        display: block; \n        margin-top: 24px; \n        color: var(--text-secondary); \n        text-decoration: none; \n        font-size: 14px;\n        cursor: pointer;\n        transition: color 0.2s;\n    }\n    .back-link:hover { color: var(--primary); }\n    @media (max-width: 480px) {\n        .auth-card { padding: 32px; }\n        h1 { font-size: 24px; }\n    }\n    </style>
+        * { margin: 0; padding: 0; box-sizing: border-box; }
+        body {
+            font-family: 'Inter', -apple-system, sans-serif;
+            background: linear-gradient(135deg, #1a2a1f 0%, #0a3b1a 100%);
+            min-height: 100vh;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+        }
+        .login-box {
+            background: white;
+            padding: 48px;
+            border-radius: 48px;
+            width: 100%;
+            max-width: 400px;
+            text-align: center;
+        }
+        h1 { margin-bottom: 32px; color: #1a2a1f; }
+        input {
+            width: 100%;
+            padding: 14px;
+            margin: 8px 0;
+            border: 1px solid #ddd;
+            border-radius: 28px;
+            font-size: 15px;
+        }
+        button {
+            width: 100%;
+            padding: 14px;
+            margin-top: 24px;
+            background: #0f5c2f;
+            color: white;
+            border: none;
+            border-radius: 32px;
+            font-size: 15px;
+            font-weight: 600;
+            cursor: pointer;
+        }
+        .error {
+            color: #dc2626;
+            margin-top: 12px;
+            display: none;
+        }
+        .back-link {
+            display: block;
+            margin-top: 24px;
+            color: #5a6e5a;
+            text-decoration: none;
+        }
+    </style>
 </head>
 <body>
-    <div class="auth-card">
-        <div class="admin-icon">
-            <i class="fas fa-shield-alt"></i>
-        </div>
+    <div class="login-box">
         <h1>Admin Access</h1>
-        <div class="subtitle">Secure authentication required</div>
-        <div id="loginError" class="error"></div>
-        <form onsubmit="handleLogin(event)">
-            <div class="form-group">
-                <label>Email</label>
-                <input type="email" id="email" placeholder="admin@lako.com" value="admin@lako.com" required>
-            </div>
-            <div class="form-group">
-                <label>Password</label>
-                <input type="password" id="password" placeholder="••••••••" value="admin123" required>
-            </div>
-            <button type="submit" class="btn">Authenticate</button>
-        </form>
-        <a class="back-link" onclick="goToIndex()">← Back to site</a>
+        <div id="error" class="error"></div>
+        <input type="email" id="email" placeholder="Email" value="admin@lako.com">
+        <input type="password" id="password" placeholder="Password" value="admin123">
+        <button onclick="doLogin()">Login</button>
+        <a href="/" class="back-link">← Back to site</a>
     </div>
+
     <script>
-        const API_BASE = 'http://localhost:5000/api';
-        
-        function goToIndex() {
-            window.location.href = '/';
-        }
-        
-        async function handleLogin(e) {
-            e.preventDefault();
+        async function doLogin() {
             const email = document.getElementById('email').value;
             const password = document.getElementById('password').value;
-            const errorDiv = document.getElementById('loginError');
+            const errorDiv = document.getElementById('error');
+            
+            errorDiv.style.display = 'none';
             
             try {
-                const res = await fetch(`${API_BASE}/auth/login`, {
+                const response = await fetch('/api/auth/login', {
                     method: 'POST',
                     headers: { 'Content-Type': 'application/json' },
                     body: JSON.stringify({ email, password })
                 });
-                const data = await res.json();
                 
-                if (res.ok && data.role === 'admin') {
+                const data = await response.json();
+                
+                if (response.ok && data.user && data.user.role === 'admin') {
                     localStorage.setItem('session_token', data.session_token);
-                    localStorage.setItem('user_role', 'admin');
-                    window.location.href = 'dashboard.html';
+                    localStorage.setItem('user_role', data.user.role);
+                    window.location.href = '/pages/admin/dashboard.html';
                 } else {
-                    errorDiv.textContent = 'Invalid credentials';
+                    errorDiv.textContent = data.error || 'Login failed';
                     errorDiv.style.display = 'block';
                 }
             } catch (e) {
-                errorDiv.textContent = 'Network error - is backend running?';
+                errorDiv.textContent = 'Network error';
                 errorDiv.style.display = 'block';
             }
         }

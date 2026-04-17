@@ -47,3 +47,6 @@ class HeatmapLayer {
         }
     }
 }
+
+// Note: Heatmap layer is typically instantiated per map instance
+// For usage: const heatmap = new HeatmapLayer(mapManager.map);

@@ -18,6 +18,7 @@ const ASSETS_TO_CACHE = [
   '/css/admin.css',
   '/css/auth.css',
   '/css/dashboard.css',
+  '/css/mobile-first.css',
   '/js/api.js',
   '/js/app.js',
   '/js/auth.js',
@@ -27,12 +28,49 @@ const ASSETS_TO_CACHE = [
   '/js/imageHandler.js',
   '/js/map.js',
   '/js/heatmap.js',
+  '/js/chart.js',
+  '/js/pwa.js',
+  '/js/chat.js',
   '/pages/landing.html',
   '/pages/login.html',
   '/pages/register.html',
+  '/pages/reset-password.html',
   '/pages/guest/browse.html',
+  '/pages/customer/dashboard.html',
+  '/pages/customer/news-feed.html',
+  '/pages/customer/map.html',
+  '/pages/customer/search.html',
+  '/pages/customer/shortlist.html',
+  '/pages/customer/suggestions.html',
+  '/pages/customer/activities.html',
+  '/pages/customer/profile.html',
+  '/pages/customer/chat.html',
+  '/pages/customer/chat-list.html',
+  '/pages/vendor/dashboard.html',
+  '/pages/vendor/products.html',
+  '/pages/vendor/analytics.html',
+  '/pages/vendor/orders.html',
+  '/pages/vendor/settings.html',
+  '/pages/vendor/login.html',
+  '/pages/vendor/register.html',
+  '/pages/admin/dashboard.html',
+  '/pages/admin/login.html',
+  '/pages/admin/users.html',
+  '/pages/admin/vendors.html',
+  '/pages/admin/products.html',
+  '/pages/admin/posts.html',
+  '/pages/admin/reviews.html',
+  '/pages/admin/media.html',
+  '/pages/admin/reports.html',
+  '/pages/admin/settings.html',
+  '/components/header.html',
+  '/components/footer.html',
+  '/components/bottom-nav.html',
+  '/components/sidebar.html',
+  '/components/modal.html',
   '/assets/images/logo-192.png',
-  '/assets/images/logo-512.png'
+  '/assets/images/logo-512.png',
+  '/assets/images/logo.svg'
 ];
 
 // Install event - cache essential assets
@@ -73,8 +111,16 @@ self.addEventListener('fetch', event => {
   const { request } = event;
   const url = new URL(request.url);
 
-  // Skip non-GET requests
+  // For non-GET requests (POST, PUT, DELETE, etc), always use network
   if (request.method !== 'GET') {
+    event.respondWith(
+      fetch(request).catch(() => {
+        return new Response(
+          JSON.stringify({ error: 'Network request failed' }),
+          { status: 503, headers: { 'Content-Type': 'application/json' } }
+        );
+      })
+    );
     return;
   }
 

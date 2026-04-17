@@ -6,10 +6,18 @@ class PWAManager {
   }
 
   init() {
-    // Register service worker when DOM is ready
+    // Unregister old service workers first
     if ('serviceWorker' in navigator) {
-      document.addEventListener('DOMContentLoaded', () => {
-        this.registerServiceWorker();
+      navigator.serviceWorker.getRegistrations().then(registrations => {
+        registrations.forEach(registration => {
+          registration.unregister();
+          console.log('[PWA] Unregistered old service worker');
+        });
+        
+        // Then register new service worker when DOM is ready
+        document.addEventListener('DOMContentLoaded', () => {
+          this.registerServiceWorker();
+        });
       });
     }
 

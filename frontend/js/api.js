@@ -1,5 +1,23 @@
 // API Service for Lako Backend
-const API_BASE = 'http://localhost:5000/api';
+// Dynamically detect API base URL for both localhost and 127.0.0.1
+const getAPIBase = () => {
+    const hostname = window.location.hostname;
+    const port = window.location.port || '5000';
+    
+    // Support both localhost and 127.0.0.1
+    const host = (hostname === 'localhost' || hostname === '127.0.0.1') 
+        ? hostname 
+        : 'localhost';
+    
+    return `http://${host}:${port}/api`;
+};
+
+const API_BASE = getAPIBase();
+
+// Make API_BASE globally available
+if (typeof window !== 'undefined') {
+    window.API_BASE = API_BASE;
+}
 
 class ApiService {
     constructor() {
