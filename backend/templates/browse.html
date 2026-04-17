@@ -1,0 +1,181 @@
+{% extends "base.html" %}
+
+{% block title %}Lako - Browse Vendors{% endblock %}
+
+{% block extra_style %}
+<style>
+    body { padding: 0; }
+    .browse-header {
+        background: linear-gradient(135deg, #0f5c2f 0%, #0a4a25 100%);
+        color: white;
+        padding: 24px;
+        sticky: top;
+        z-index: 10;
+    }
+    .search-bar {
+        background: white;
+        border-radius: 40px;
+        padding: 4px 12px;
+        display: flex;
+        align-items: center;
+        max-width: 600px;
+        margin: 0 auto;
+    }
+    .search-bar input {
+        flex: 1;
+        border: none;
+        outline: none;
+        padding: 10px 12px;
+        background: none;
+    }
+    .search-bar button { background: none; border: none; cursor: pointer; color: var(--primary); }
+    .browse-content { display: flex; max-width: 1400px; margin: 0 auto; }
+    .filters { width: 280px; padding: 20px; background: var(--surface); border-radius: var(--radius); margin: 20px; height: fit-content; position: sticky; top: 20px; }
+    .filter-group { margin-bottom: 20px; }
+    .filter-group label { font-weight: 600; display: block; margin-bottom: 12px; }
+    .filter-item { display: flex; align-items: center; margin-bottom: 8px; }
+    .filter-item input { margin-right: 8px; }
+    .vendors-grid { flex: 1; padding: 20px; display: grid; grid-template-columns: repeat(auto-fill, minmax(280px, 1fr)); gap: 20px; }
+    .vendor-card {
+        background: var(--surface);
+        border-radius: 20px;
+        overflow: hidden;
+        box-shadow: var(--shadow);
+        border: 1px solid var(--border);
+        transition: all 0.3s;
+        cursor: pointer;
+    }
+    .vendor-card:hover { transform: translateY(-4px); box-shadow: 0 12px 32px rgba(0, 0, 0, 0.12); }
+    .vendor-header {
+        height: 140px;
+        background: linear-gradient(135deg, #0f5c2f 0%, #0a4a25 100%);
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        font-size: 48px;
+        color: white;
+    }
+    .vendor-content { padding: 16px; }
+    .vendor-name { font-weight: 600; margin-bottom: 4px; }
+    .vendor-category { font-size: 12px; color: var(--text-secondary); margin-bottom: 8px; }
+    .vendor-rating { color: var(--primary); font-weight: 600; margin-bottom: 12px; }
+    .vendor-distance { font-size: 12px; color: var(--text-secondary); margin-bottom: 12px; }
+    .vendor-action {
+        width: 100%;
+        padding: 10px;
+        background: var(--primary);
+        color: white;
+        border: none;
+        border-radius: 20px;
+        cursor: pointer;
+        font-weight: 600;
+        transition: all 0.2s;
+    }
+    .vendor-action:hover { background: var(--primary-dark); }
+    @media (max-width: 1024px) {
+        .browse-content { flex-direction: column; }
+        .filters { width: 100%; position: relative; top: 0; }
+        .vendors-grid { grid-template-columns: repeat(auto-fill, minmax(240px, 1fr)); }
+    }
+    @media (max-width: 768px) {
+        .vendors-grid { grid-template-columns: repeat(2, 1fr); }
+    }
+</style>
+{% endblock %}
+
+{% block content %}
+<div class="browse-header">
+    <div style="max-width: 1400px; margin: 0 auto;">
+        <h1 style="margin-bottom: 16px;">🍜 Discover Local Vendors</h1>
+        <div class="search-bar">
+            <i class="fas fa-search"></i>
+            <input type="text" placeholder="Search vendors or products..." id="searchInput" onkeyup="handleSearch()">
+            <button onclick="handleSearch()"><i class="fas fa-arrow-right"></i></button>
+        </div>
+    </div>
+</div>
+
+<div class="browse-content">
+    <div class="filters glass-card">
+        <h3 style="margin-bottom: 16px;">Filters</h3>
+        
+        <div class="filter-group">
+            <label>Category</label>
+            {% for category in categories or ['Food', 'Goods', 'Services'] %}
+                <div class="filter-item">
+                    <input type="checkbox" value="{{ category }}" onchange="applyFilters()">
+                    <label style="margin: 0;">{{ category }}</label>
+                </div>
+            {% endfor %}
+        </div>
+        
+        <div class="filter-group">
+            <label>Rating</label>
+            {% for rating in [5, 4, 3, 2, 1] %}
+                <div class="filter-item">
+                    <input type="checkbox" value="{{ rating }}" onchange="applyFilters()">
+                    <label style="margin: 0;">{{ rating }}+ ⭐</label>
+                </div>
+            {% endfor %}
+        </div>
+        
+        <div class="filter-group">
+            <label>Distance</label>
+            <select onchange="applyFilters()" style="width: 100%; padding: 8px; border-radius: 8px; border: 1px solid var(--border);">
+                <option value="">Any distance</option>
+                <option value="1">Within 1km</option>
+                <option value="5">Within 5km</option>
+                <option value="10">Within 10km</option>
+                <option value="20">Within 20km</option>
+            </select>
+        </div>
+        
+        <button class="btn btn-primary" style="width: 100%;" onclick="clearFilters()">Clear Filters</button>
+    </div>
+    
+    <div class="vendors-grid">
+        {% if vendors %}
+            {% for vendor in vendors %}
+                <div class="vendor-card" onclick="window.location.href='/vendor/{{ vendor.id }}'">
+                    <div class="vendor-header">
+                        {% if vendor.name %}
+                            {{ vendor.name[0].upper() }}
+                        {% else %}
+                            🏪
+                        {% endif %}
+                    </div>
+                    <div class="vendor-content">
+                        <div class="vendor-name">{{ vendor.business_name or vendor.name }}</div>
+                        <div class="vendor-category">{{ vendor.category or 'General' }}</div>
+                        <div class="vendor-rating">⭐ {{ "%.1f"|format(vendor.rating or 0) }} ({{ vendor.review_count or 0 }})</div>
+                        <div class="vendor-distance">📍 {{ vendor.distance or 'Distance unknown' }}</div>
+                        <button class="vendor-action">View Profile →</button>
+                    </div>
+                </div>
+            {% endfor %}
+        {% else %}
+            <div style="grid-column: 1/-1; text-align: center; padding: 60px 20px;">
+                <p style="color: var(--text-secondary); font-size: 16px;">No vendors found. Try adjusting your filters!</p>
+            </div>
+        {% endif %}
+    </div>
+</div>
+
+<script>
+function handleSearch() {
+    const query = document.getElementById('searchInput').value;
+    window.location.href = `/browse?search=${encodeURIComponent(query)}`;
+}
+
+function applyFilters() {
+    // TODO: Implement filter logic
+    console.log('Filters applied');
+}
+
+function clearFilters() {
+    document.querySelectorAll('input[type="checkbox"]').forEach(cb => cb.checked = false);
+    document.querySelector('select').value = '';
+    applyFilters();
+}
+</script>
+{% endblock %}

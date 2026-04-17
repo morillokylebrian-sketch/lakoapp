@@ -1,0 +1,411 @@
+{% extends "base.html" %}
+
+{% block title %}Review {{ product.name }} - Lako{% endblock %}
+
+{% block extra_style %}
+<style>
+    .review-container { max-width: 600px; margin: 0 auto; padding: 20px; }
+    .review-card {
+        background: var(--surface);
+        border-radius: 20px;
+        padding: 24px;
+        border: 1px solid var(--border);
+    }
+    .review-header {
+        display: flex;
+        gap: 16px;
+        padding-bottom: 24px;
+        border-bottom: 1px solid var(--border);
+        align-items: flex-start;
+    }
+    .product-avatar {
+        width: 80px;
+        height: 80px;
+        border-radius: 12px;
+        background: linear-gradient(135deg, #0f5c2f 0%, #0a4a25 100%);
+        color: white;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        font-size: 36px;
+        flex-shrink: 0;
+    }
+    .product-info h2 {
+        margin: 0 0 4px 0;
+        font-size: 18px;
+    }
+    .product-info small {
+        color: var(--text-secondary);
+    }
+    .form-group {
+        margin-bottom: 20px;
+    }
+    .form-label {
+        display: block;
+        font-weight: 600;
+        margin-bottom: 8px;
+        font-size: 14px;
+    }
+    .rating-input {
+        display: flex;
+        gap: 12px;
+        margin-bottom: 12px;
+    }
+    .star {
+        font-size: 32px;
+        cursor: pointer;
+        transition: all 0.2s;
+    }
+    .star:hover,
+    .star.active {
+        transform: scale(1.2);
+    }
+    .rating-label {
+        font-size: 12px;
+        color: var(--text-secondary);
+        margin-top: 8px;
+    }
+    textarea {
+        width: 100%;
+        padding: 12px;
+        border: 1px solid var(--border);
+        border-radius: 12px;
+        font-family: inherit;
+        font-size: 15px;
+        resize: vertical;
+        min-height: 120px;
+    }
+    textarea:focus {
+        outline: none;
+        border-color: var(--primary);
+    }
+    .image-preview-container {
+        display: grid;
+        grid-template-columns: repeat(auto-fill, minmax(80px, 1fr));
+        gap: 12px;
+    }
+    .image-preview {
+        position: relative;
+        border-radius: 12px;
+        overflow: hidden;
+        background: var(--bg);
+        aspect-ratio: 1;
+    }
+    .image-preview img {
+        width: 100%;
+        height: 100%;
+        object-fit: cover;
+    }
+    .remove-image {
+        position: absolute;
+        top: 4px;
+        right: 4px;
+        background: rgba(0,0,0,0.6);
+        color: white;
+        border: none;
+        border-radius: 50%;
+        width: 24px;
+        height: 24px;
+        cursor: pointer;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        font-size: 14px;
+        transition: all 0.2s;
+    }
+    .remove-image:hover {
+        background: rgba(0,0,0,0.8);
+    }
+    .upload-area {
+        border: 2px dashed var(--border);
+        border-radius: 12px;
+        padding: 16px;
+        text-align: center;
+        cursor: pointer;
+        transition: all 0.2s;
+        background: rgba(15, 92, 47, 0.02);
+    }
+    .upload-area:hover {
+        border-color: var(--primary);
+        background: rgba(15, 92, 47, 0.08);
+    }
+    .upload-icon { font-size: 24px; margin-bottom: 4px; }
+    .upload-text { font-size: 13px; margin-bottom: 2px; }
+    .upload-subtext { font-size: 11px; color: var(--text-secondary); }
+    #photoInput {
+        display: none;
+    }
+    .form-actions {
+        display: flex;
+        gap: 12px;
+        padding-top: 24px;
+        border-top: 1px solid var(--border);
+        margin-top: 20px;
+    }
+    .btn {
+        flex: 1;
+        padding: 12px;
+        border: none;
+        border-radius: 8px;
+        font-weight: 600;
+        cursor: pointer;
+        transition: all 0.2s;
+    }
+    .btn-primary {
+        background: var(--primary);
+        color: white;
+    }
+    .btn-primary:hover {
+        opacity: 0.9;
+    }
+    .btn-outline {
+        background: transparent;
+        border: 1px solid var(--border);
+        color: var(--text);
+    }
+    .btn-outline:hover {
+        background: var(--bg);
+    }
+    .char-count {
+        font-size: 12px;
+        color: var(--text-secondary);
+        text-align: right;
+        margin-top: 4px;
+    }
+    .helpful-section {
+        background: rgba(15, 92, 47, 0.05);
+        padding: 12px;
+        border-radius: 8px;
+        margin-top: 12px;
+        font-size: 13px;
+    }
+    @media (max-width: 768px) {
+        .review-container {
+            padding: 12px;
+        }
+        .review-header {
+            flex-direction: column;
+            align-items: center;
+            text-align: center;
+        }
+    }
+</style>
+{% endblock %}
+
+{% block content %}
+<div class="review-container">
+    <a href="/product/{{ product.id }}" style="color: var(--primary); display: inline-flex; align-items: center; gap: 8px; margin-bottom: 20px;">
+        ← Back to Product
+    </a>
+    
+    <div class="review-card">
+        <!-- Product Info -->
+        <div class="review-header">
+            <div class="product-avatar">{{ product.category[:1].upper() if product.category else '📦' }}</div>
+            <div class="product-info">
+                <h2>{{ product.name }}</h2>
+                <small>Price: ₱{{ "{:,}".format(product.price or 0) }}</small><br>
+                <small>Vendor: {{ product.vendor_name or 'Unknown' }}</small>
+            </div>
+        </div>
+        
+        <form id="reviewForm" enctype="multipart/form-data">
+            <!-- Rating -->
+            <div class="form-group">
+                <label class="form-label">Rate this product</label>
+                <div class="rating-input" id="ratingInput">
+                    {% for i in range(5) %}
+                        <span class="star" data-rating="{{ i + 1 }}" onclick="setRating({{ i + 1 }})">⭐</span>
+                    {% endfor %}
+                </div>
+                <input type="hidden" id="rating" name="rating" value="0">
+                <div class="rating-label" id="ratingLabel">Click to select rating</div>
+            </div>
+            
+            <!-- Review Text -->
+            <div class="form-group">
+                <label class="form-label">Share your experience</label>
+                <textarea id="reviewText" name="content" placeholder="Tell us about your experience with this product..."></textarea>
+                <div class="char-count"><span id="charCount">0</span>/500</div>
+                <div class="helpful-section">
+                    💡 Tip: Specific details (fit, quality, durability) help other shoppers make informed decisions
+                </div>
+            </div>
+            
+            <!-- Photo Upload -->
+            <div class="form-group">
+                <label class="form-label">Add photos (optional)</label>
+                <div id="imagePreviewContainer" class="image-preview-container" style="margin-bottom: 12px;"></div>
+                <div class="upload-area" id="uploadArea" onclick="document.getElementById('photoInput').click()">
+                    <div class="upload-icon">📸</div>
+                    <div class="upload-text">Add photos of the product</div>
+                    <div class="upload-subtext">Up to 5 photos, 5MB each</div>
+                </div>
+                <input type="file" id="photoInput" name="photos" multiple accept="image/*">
+            </div>
+            
+            <!-- Form Actions -->
+            <div class="form-actions">
+                <button type="button" class="btn btn-outline" onclick="window.history.back()">Cancel</button>
+                <button type="submit" class="btn btn-primary">Submit Review</button>
+            </div>
+        </form>
+    </div>
+</div>
+
+<script>
+const uploadArea = document.getElementById('uploadArea');
+const photoInput = document.getElementById('photoInput');
+const imagePreviewContainer = document.getElementById('imagePreviewContainer');
+const reviewText = document.getElementById('reviewText');
+const charCount = document.getElementById('charCount');
+const ratingInput = document.getElementById('ratingInput');
+const ratingLabel = document.getElementById('ratingLabel');
+const ratingField = document.getElementById('rating');
+let selectedPhotos = [];
+let currentRating = 0;
+
+// Character counter
+reviewText.addEventListener('input', () => {
+    charCount.textContent = reviewText.value.length;
+    if (reviewText.value.length > 500) {
+        reviewText.value = reviewText.value.substring(0, 500);
+        charCount.textContent = 500;
+    }
+});
+
+// Rating selection
+function setRating(rating) {
+    currentRating = rating;
+    ratingField.value = rating;
+    updateRatingDisplay(rating);
+}
+
+function updateRatingDisplay(rating) {
+    document.querySelectorAll('.star').forEach((star, idx) => {
+        if (idx < rating) {
+            star.classList.add('active');
+            star.textContent = '⭐';
+        } else {
+            star.classList.remove('active');
+            star.textContent = '☆';
+        }
+    });
+    
+    const labels = ['', '😞 Poor', '😐 Okay', '🙂 Good', '😊 Very Good', '😍 Excellent'];
+    ratingLabel.textContent = labels[rating];
+}
+
+// Hover rating display
+ratingInput.addEventListener('mouseover', (e) => {
+    if (e.target.classList.contains('star')) {
+        const rating = parseInt(e.target.dataset.rating);
+        updateRatingDisplay(rating);
+    }
+});
+
+ratingInput.addEventListener('mouseout', () => {
+    updateRatingDisplay(currentRating);
+});
+
+// Drag and drop
+uploadArea.addEventListener('dragover', (e) => {
+    e.preventDefault();
+    uploadArea.classList.add('dragover');
+});
+
+uploadArea.addEventListener('dragleave', () => {
+    uploadArea.classList.remove('dragover');
+});
+
+uploadArea.addEventListener('drop', (e) => {
+    e.preventDefault();
+    uploadArea.classList.remove('dragover');
+    const files = Array.from(e.dataTransfer.files).filter(f => f.type.startsWith('image/'));
+    handlePhotoSelection(files);
+});
+
+// File input change
+photoInput.addEventListener('change', (e) => {
+    const files = Array.from(e.target.files);
+    handlePhotoSelection(files);
+});
+
+function handlePhotoSelection(files) {
+    const newPhotos = files.slice(0, 5 - selectedPhotos.length);
+    
+    newPhotos.forEach(file => {
+        if (file.size > 5 * 1024 * 1024) {
+            alert(`File ${file.name} is too large. Max 5MB.`);
+            return;
+        }
+        
+        const reader = new FileReader();
+        reader.onload = (e) => {
+            selectedPhotos.push({
+                file: file,
+                preview: e.target.result
+            });
+            renderPhotoPreviews();
+        };
+        reader.readAsDataURL(file);
+    });
+}
+
+function renderPhotoPreviews() {
+    imagePreviewContainer.innerHTML = selectedPhotos.map((photo, idx) => `
+        <div class="image-preview">
+            <img src="${photo.preview}" alt="Preview">
+            <button type="button" class="remove-image" onclick="removePhoto(${idx})">✕</button>
+        </div>
+    `).join('');
+}
+
+function removePhoto(index) {
+    selectedPhotos.splice(index, 1);
+    renderPhotoPreviews();
+    photoInput.value = '';
+}
+
+// Form submission
+document.getElementById('reviewForm').addEventListener('submit', async (e) => {
+    e.preventDefault();
+    
+    if (!currentRating) {
+        alert('Please select a rating');
+        return;
+    }
+    
+    if (!reviewText.value.trim()) {
+        alert('Please write a review');
+        return;
+    }
+    
+    const formData = new FormData();
+    formData.append('product_id', '{{ product.id }}');
+    formData.append('rating', currentRating);
+    formData.append('content', reviewText.value);
+    
+    selectedPhotos.forEach(photo => {
+        formData.append('photos', photo.file);
+    });
+    
+    try {
+        const response = await fetch('/product/{{ product.id }}/review', {
+            method: 'POST',
+            body: formData
+        });
+        
+        if (response.ok) {
+            showToast('Review posted successfully!', 'success');
+            setTimeout(() => window.location.href = '/product/{{ product.id }}', 1500);
+        } else {
+            showToast('Failed to post review', 'error');
+        }
+    } catch (error) {
+        console.error('Error:', error);
+        showToast('Error posting review', 'error');
+    }
+});
+</script>
+{% endblock %}

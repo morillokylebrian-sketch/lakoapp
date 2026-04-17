@@ -1,0 +1,130 @@
+{% extends "base.html" %}
+
+{% block title %}Suggestions - Lako{% endblock %}
+
+{% block extra_style %}
+<style>
+    .suggestions-container { max-width: 1200px; margin: 0 auto; padding: 20px; }
+    .suggestions-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 24px; }
+    .section { background: var(--surface); border-radius: 20px; padding: 24px; border: 1px solid var(--border); }
+    .section-title { font-size: 20px; font-weight: 600; margin-bottom: 16px; }
+    .vendor-item, .product-item {
+        background: transparent;
+        border-bottom: 1px solid var(--border);
+        padding: 12px 0;
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+    }
+    .vendor-item:last-child, .product-item:last-child { border-bottom: none; }
+    .vendor-avatar {
+        width: 50px;
+        height: 50px;
+        border-radius: 50%;
+        background: linear-gradient(135deg, #0f5c2f 0%, #0a4a25 100%);
+        color: white;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        font-weight: 600;
+        margin-right: 12px;
+    }
+    .item-info { flex: 1; }
+    .item-name { font-weight: 600; }
+    .item-detail { font-size: 12px; color: var(--text-secondary); }
+    .item-action { margin-left: 12px; }
+    .reason-badge {
+        display: inline-block;
+        background: rgba(15, 92, 47, 0.1);
+        color: var(--primary);
+        padding: 4px 12px;
+        border-radius: 12px;
+        font-size: 11px;
+        font-weight: 600;
+    }
+    @media (max-width: 768px) {
+        .suggestions-grid { grid-template-columns: 1fr; }
+    }
+</style>
+{% endblock %}
+
+{% block content %}
+<div class="suggestions-container">
+    <h1 style="margin-bottom: 24px;">✨ Recommended For You</h1>
+    
+    <div class="suggestions-grid">
+        <!-- Vendors Section -->
+        <div class="section">
+            <h2 class="section-title">Suggested Vendors</h2>
+            {% if vendors %}
+                {% for vendor in vendors %}
+                    <div class="vendor-item">
+                        <div style="display: flex; align-items: center; cursor: pointer; flex: 1;" onclick="window.location.href='/vendor/{{ vendor.id }}'">
+                            <span class="vendor-avatar">{{ vendor.name[0].upper() if vendor.name else '?' }}</span>
+                            <div class="item-info">
+                                <div class="item-name">{{ vendor.business_name or vendor.name }}</div>
+                                <div class="item-detail">
+                                    ⭐ {{ "%.1f"|format(vendor.rating or 0) }} 
+                                    • {{ vendor.category or 'General' }}
+                                </div>
+                            </div>
+                        </div>
+                        <button class="btn btn-outline btn-small" style="padding: 8px 12px; font-size: 12px;">Follow</button>
+                    </div>
+                {% endfor %}
+            {% else %}
+                <p style="color: var(--text-secondary); text-align: center; padding: 20px;">No vendor suggestions yet. Browse to find vendors!</p>
+            {% endif %}
+        </div>
+        
+        <!-- Products Section -->
+        <div class="section">
+            <h2 class="section-title">Suggested Products</h2>
+            {% if products %}
+                {% for product in products %}
+                    <div class="product-item">
+                        <div style="cursor: pointer; flex: 1;" onclick="window.location.href='/product/{{ product.id }}'">
+                            <div class="item-name">{{ product.name }}</div>
+                            <div class="item-detail">
+                                ₱{{ "{:,}".format(product.price or 0) }}
+                                • {{ product.vendor_name or 'Unknown' }}
+                            </div>
+                        </div>
+                        <button class="btn btn-outline btn-small" style="padding: 8px 12px; font-size: 12px;" onclick="viewProduct('{{ product.id }}')">View</button>
+                    </div>
+                {% endfor %}
+            {% else %}
+                <p style="color: var(--text-secondary); text-align: center; padding: 20px;">No product suggestions yet. You'll see them as you browse!</p>
+            {% endif %}
+        </div>
+    </div>
+    
+    <!-- How it works -->
+    <div class="section" style="margin-top: 24px;">
+        <h2 class="section-title">How We Suggest</h2>
+        <div style="display: grid; grid-template-columns: repeat(3, 1fr); gap: 16px;">
+            <div style="text-align: center;">
+                <div style="font-size: 32px; margin-bottom: 8px;">👀</div>
+                <strong>Your Activity</strong>
+                <p style="font-size: 12px; color: var(--text-secondary); margin-top: 8px;">Based on what you've viewed and liked</p>
+            </div>
+            <div style="text-align: center;">
+                <div style="font-size: 32px; margin-bottom: 8px;">🏪</div>
+                <strong>Popular Items</strong>
+                <p style="font-size: 12px; color: var(--text-secondary); margin-top: 8px;">Trending in your area</p>
+            </div>
+            <div style="text-align: center;">
+                <div style="font-size: 32px; margin-bottom: 8px;">⭐</div>
+                <strong>Highly Rated</strong>
+                <p style="font-size: 12px; color: var(--text-secondary); margin-top: 8px;">Top-rated vendors and products</p>
+            </div>
+        </div>
+    </div>
+</div>
+
+<script>
+function viewProduct(id) {
+    window.location.href = `/product/${id}`;
+}
+</script>
+{% endblock %}

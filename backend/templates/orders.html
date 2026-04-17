@@ -1,0 +1,275 @@
+{% extends "base.html" %}
+
+{% block title %}My Orders - Lako{% endblock %}
+
+{% block extra_style %}
+<style>
+    .orders-container { max-width: 1000px; margin: 0 auto; padding: 20px; }
+    .orders-header {
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        margin-bottom: 24px;
+    }
+    .tab-navigation {
+        display: flex;
+        gap: 8px;
+        margin-bottom: 24px;
+        border-bottom: 2px solid var(--border);
+    }
+    .tab {
+        padding: 12px 24px;
+        background: transparent;
+        border: none;
+        cursor: pointer;
+        font-weight: 500;
+        border-bottom: 3px solid transparent;
+        color: var(--text-secondary);
+        transition: all 0.2s;
+    }
+    .tab.active {
+        color: var(--primary);
+        border-bottom-color: var(--primary);
+    }
+    .tab:hover {
+        color: var(--primary);
+    }
+    .order-card {
+        background: var(--surface);
+        border: 1px solid var(--border);
+        border-radius: 16px;
+        padding: 20px;
+        margin-bottom: 16px;
+        cursor: pointer;
+        transition: all 0.2s;
+    }
+    .order-card:hover {
+        border-color: var(--primary);
+        box-shadow: 0 4px 12px rgba(15, 92, 47, 0.1);
+    }
+    .order-header {
+        display: flex;
+        justify-content: space-between;
+        align-items: flex-start;
+        margin-bottom: 16px;
+    }
+    .order-id {
+        font-weight: 600;
+        font-size: 16px;
+    }
+    .order-status {
+        padding: 6px 12px;
+        border-radius: 20px;
+        font-size: 12px;
+        font-weight: 600;
+        white-space: nowrap;
+    }
+    .status-completed {
+        background: rgba(34, 197, 94, 0.1);
+        color: #22c55e;
+    }
+    .status-pending {
+        background: rgba(249, 115, 22, 0.1);
+        color: #f97316;
+    }
+    .status-cancelled {
+        background: rgba(239, 68, 68, 0.1);
+        color: #ef4444;
+    }
+    .status-shipped {
+        background: rgba(59, 130, 246, 0.1);
+        color: #3b82f6;
+    }
+    .order-items {
+        border-bottom: 1px solid var(--border);
+        padding-bottom: 12px;
+        margin-bottom: 12px;
+    }
+    .order-item {
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        margin-bottom: 8px;
+    }
+    .order-item:last-child {
+        margin-bottom: 0;
+    }
+    .item-name {
+        font-size: 14px;
+        font-weight: 500;
+    }
+    .item-qty {
+        font-size: 13px;
+        color: var(--text-secondary);
+    }
+    .item-price {
+        font-weight: 600;
+        color: var(--primary);
+    }
+    .order-footer {
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        font-size: 14px;
+    }
+    .vendor-info {
+        color: var(--text-secondary);
+    }
+    .order-date {
+        color: var(--text-secondary);
+        font-size: 13px;
+    }
+    .order-total {
+        font-weight: 600;
+        font-size: 16px;
+        color: var(--primary);
+    }
+    .actions {
+        display: flex;
+        gap: 8px;
+        margin-top: 12px;
+    }
+    .btn-small {
+        padding: 8px 16px;
+        font-size: 13px;
+        flex: 1;
+    }
+    .empty-state {
+        text-align: center;
+        padding: 60px 20px;
+        color: var(--text-secondary);
+    }
+    .empty-icon {
+        font-size: 48px;
+        margin-bottom: 16px;
+    }
+    @media (max-width: 768px) {
+        .order-header {
+            flex-direction: column;
+        }
+        .order-status {
+            margin-top: 12px;
+        }
+        .orders-container {
+            padding: 16px;
+        }
+    }
+</style>
+{% endblock %}
+
+{% block content %}
+<div class="orders-container">
+    <div class="orders-header">
+        <h1>My Orders</h1>
+        <a href="/browse" class="btn btn-primary">Continue Shopping</a>
+    </div>
+    
+    <!-- Tab Navigation -->
+    <div class="tab-navigation">
+        <button class="tab active" onclick="filterOrders('all')">All Orders</button>
+        <button class="tab" onclick="filterOrders('pending')">Pending</button>
+        <button class="tab" onclick="filterOrders('shipped')">Shipped</button>
+        <button class="tab" onclick="filterOrders('completed')">Completed</button>
+        <button class="tab" onclick="filterOrders('cancelled')">Cancelled</button>
+    </div>
+    
+    <!-- Orders List -->
+    <div id="orders-list">
+        {% if orders %}
+            {% for order in orders %}
+                <div class="order-card" onclick="viewOrderDetails('{{ order.id }}')">
+                    <div class="order-header">
+                        <div>
+                            <div class="order-id">Order #{{ order.order_number or order.id[:8].upper() }}</div>
+                            <div class="order-date">{{ order.created_at.strftime('%B %d, %Y') if order.created_at else 'N/A' }}</div>
+                        </div>
+                        <span class="order-status status-{{ (order.status or 'pending').lower() }}">
+                            {{ (order.status or 'Pending').title() }}
+                        </span>
+                    </div>
+                    
+                    <div class="order-items">
+                        {% if order.items %}
+                            {% for item in order.items[:2] %}
+                                <div class="order-item">
+                                    <div>
+                                        <div class="item-name">{{ item.product_name }}</div>
+                                        <div class="item-qty">Qty: {{ item.quantity }}</div>
+                                    </div>
+                                    <div class="item-price">₱{{ "{:,}".format(item.price * item.quantity) }}</div>
+                                </div>
+                            {% endfor %}
+                            {% if order.items|length > 2 %}
+                                <div style="color: var(--text-secondary); font-size: 13px; margin-top: 8px;">
+                                    +{{ order.items|length - 2 }} more items
+                                </div>
+                            {% endif %}
+                        {% endif %}
+                    </div>
+                    
+                    <div class="order-footer">
+                        <div class="vendor-info">From: {{ order.vendor_name or 'Unknown Vendor' }}</div>
+                        <div class="order-total">₱{{ "{:,}".format(order.total or 0) }}</div>
+                    </div>
+                    
+                    <div class="actions">
+                        {% if order.status == 'pending' or order.status == 'processing' %}
+                            <button class="btn btn-outline btn-small" onclick="cancelOrder(event, '{{ order.id }}')">Cancel Order</button>
+                        {% endif %}
+                        {% if order.status == 'completed' %}
+                            <button class="btn btn-outline btn-small" onclick="leaveReview(event, '{{ order.id }}')">Leave Review</button>
+                        {% endif %}
+                        <button class="btn btn-primary btn-small" onclick="viewOrderDetails(event, '{{ order.id }}')">View Details</button>
+                    </div>
+                </div>
+            {% endfor %}
+        {% else %}
+            <div class="empty-state">
+                <div class="empty-icon">📦</div>
+                <h2>No Orders Yet</h2>
+                <p>Start shopping to create your first order!</p>
+                <a href="/browse" class="btn btn-primary" style="margin-top: 20px;">Browse Vendors</a>
+            </div>
+        {% endif %}
+    </div>
+</div>
+
+<script>
+function filterOrders(status) {
+    // Update active tab
+    document.querySelectorAll('.tab').forEach(tab => {
+        tab.classList.remove('active');
+    });
+    event.target.classList.add('active');
+    
+    // Filter orders
+    const orders = document.querySelectorAll('.order-card');
+    orders.forEach(order => {
+        if (status === 'all') {
+            order.style.display = 'block';
+        } else {
+            const orderStatus = order.querySelector('.order-status').textContent.toLowerCase();
+            order.style.display = orderStatus.includes(status) ? 'block' : 'none';
+        }
+    });
+}
+
+function viewOrderDetails(event, orderId) {
+    if (event && event.stopPropagation) event.stopPropagation();
+    window.location.href = `/order/${orderId}`;
+}
+
+function cancelOrder(event, orderId) {
+    event.stopPropagation();
+    if (confirm('Are you sure you want to cancel this order?')) {
+        // TODO: Make API call to cancel order
+        console.log('Cancelling order:', orderId);
+    }
+}
+
+function leaveReview(event, orderId) {
+    event.stopPropagation();
+    window.location.href = `/order/${orderId}/review`;
+}
+</script>
+{% endblock %}

@@ -1,0 +1,208 @@
+{% extends "base.html" %}
+
+{% block title %}{{ vendor.business_name or vendor.name }} - Lako{% endblock %}
+
+{% block extra_style %}
+<style>
+    .vendor-header {
+        background: linear-gradient(135deg, #0f5c2f 0%, #0a4a25 100%);
+        color: white;
+        padding: 40px 20px;
+    }
+    .vendor-header-content {
+        max-width: 1200px;
+        margin: 0 auto;
+        display: flex;
+        gap: 24px;
+        align-items: center;
+    }
+    .vendor-avatar {
+        width: 120px;
+        height: 120px;
+        border-radius: 50%;
+        background: white;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        font-size: 48px;
+        flex-shrink: 0;
+    }
+    .vendor-info h1 { font-size: 28px; margin-bottom: 8px; }
+    .vendor-meta {
+        display: flex;
+        gap: 16px;
+        flex-wrap: wrap;
+        margin-top: 12px;
+    }
+    .meta-item { display: flex; align-items: center; gap: 6px; }
+    .vendor-body {
+        max-width: 1200px;
+        margin: 0 auto;
+        padding: 20px;
+    }
+    .vendor-section {
+        margin-bottom: 32px;
+    }
+    .section-title {
+        font-size: 20px;
+        font-weight: 600;
+        margin-bottom: 16px;
+    }
+    .products-grid {
+        display: grid;
+        grid-template-columns: repeat(auto-fill, minmax(280px, 1fr));
+        gap: 20px;
+    }
+    .product-card {
+        background: var(--surface);
+        border-radius: 20px;
+        overflow: hidden;
+        border: 1px solid var(--border);
+        cursor: pointer;
+        transition: all 0.3s;
+    }
+    .product-card:hover { transform: translateY(-4px); }
+    .product-image {
+        height: 200px;
+        background: linear-gradient(135deg, #0f5c2f15 0%, #0a4a2515 100%);
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        font-size: 48px;
+    }
+    .product-content { padding: 16px; }
+    .product-name { font-weight: 600; margin-bottom: 8px; }
+    .product-price { font-size: 18px; color: var(--primary); font-weight: 600; margin-bottom: 8px; }
+    .product-rating { font-size: 12px; color: var(--text-secondary); }
+    .reviews-section { max-width: 800px; }
+    .review {
+        background: var(--surface);
+        border-radius: 16px;
+        padding: 16px;
+        margin-bottom: 12px;
+        border: 1px solid var(--border);
+    }
+    .review-header { display: flex; justify-content: space-between; align-items: center; margin-bottom: 8px; }
+    .review-author { font-weight: 600; }
+    .review-rating { color: var(--primary); }
+    .review-text { color: var(--text-secondary); }
+    .follow-btn {
+        background: var(--primary);
+        color: white;
+        padding: 12px 24px;
+        border: none;
+        border-radius: 40px;
+        cursor: pointer;
+        font-weight: 600;
+    }
+    .follow-btn:hover { background: var(--primary-dark); }
+    .follow-btn.following { background: transparent; border: 1px solid var(--primary); color: var(--primary); }
+</style>
+{% endblock %}
+
+{% block content %}
+<div class="vendor-header">
+    <div class="vendor-header-content">
+        <div class="vendor-avatar">{{ vendor.name[0].upper() if vendor.name else '?' }}</div>
+        <div class="vendor-info" style="flex: 1;">
+            <h1>{{ vendor.business_name or vendor.name }}</h1>
+            <div class="vendor-meta">
+                <div class="meta-item">
+                    <i class="fas fa-folder"></i> {{ vendor.category or 'General' }}
+                </div>
+                <div class="meta-item">
+                    <i class="fas fa-star" style="color: gold;"></i> {{ "%.1f"|format(vendor.rating or 0) }} ({{ vendor.review_count or 0 }} reviews)
+                </div>
+                <div class="meta-item">
+                    <i class="fas fa-map-marker"></i> {{ vendor.address or 'Location unknown' }}
+                </div>
+            </div>
+        </div>
+        <button class="follow-btn" onclick="toggleFollow()">
+            <i class="fas fa-heart"></i> Follow
+        </button>
+    </div>
+</div>
+
+<div class="vendor-body">
+    {% if vendor.description %}
+        <div class="vendor-section glass-card">
+            <h2 class="section-title">About</h2>
+            <p>{{ vendor.description }}</p>
+        </div>
+    {% endif %}
+    
+    <!-- Products Section -->
+    <div class="vendor-section">
+        <h2 class="section-title">Products & Services</h2>
+        {% if products %}
+            <div class="products-grid">
+                {% for product in products %}
+                    <div class="product-card" onclick="window.location.href='/product/{{ product.id }}'">
+                        <div class="product-image">{'📦' if product.category != 'food' else '🍜'}</div>
+                        <div class="product-content">
+                            <div class="product-name">{{ product.name }}</div>
+                            <div class="product-price">₱{{ "{:,}".format(product.price or 0) }}</div>
+                            <div class="product-rating">
+                                <i class="fas fa-star" style="color: gold;"></i> {{ "%.1f"|format(product.rating or 0) }}
+                            </div>
+                        </div>
+                    </div>
+                {% endfor %}
+            </div>
+        {% else %}
+            <p style="color: var(--text-secondary); text-align: center; padding: 40px;">No products listed yet</p>
+        {% endif %}
+    </div>
+    
+    <!-- Posts/Updates Section -->
+    {% if posts %}
+        <div class="vendor-section">
+            <h2 class="section-title">Recent Updates</h2>
+            {% for post in posts %}
+                <div class="glass-card" style="margin-bottom: 16px; padding: 16px;">
+                    <div style="display: flex; justify-content: space-between; margin-bottom: 8px;">
+                        <strong>{{ post.vendor_name }}</strong>
+                        <small style="color: var(--text-secondary);">{{ post.created_at.strftime('%Y-%m-%d %H:%M') if post.created_at }}</small>
+                    </div>
+                    <p>{{ post.content }}</p>
+                    <div style="display: flex; gap: 16px; margin-top: 12px; color: var(--text-secondary); font-size: 13px;">
+                        <span><i class="far fa-heart"></i> {{ post.likes or 0 }}</span>
+                        <span><i class="far fa-comment"></i> {{ post.comments or 0 }}</span>
+                    </div>
+                </div>
+            {% endfor %}
+        </div>
+    {% endif %}
+    
+    <!-- Reviews Section -->
+    <div class="vendor-section reviews-section">
+        <h2 class="section-title">Customer Reviews</h2>
+        {% if reviews %}
+            {% for review in reviews %}
+                <div class="review">
+                    <div class="review-header">
+                        <div class="review-author">{{ review.customer_name or 'Anonymous' }}</div>
+                        <div class="review-rating">{{ '⭐' * review.rating }}{{ '☆' * (5 - review.rating) }}</div>
+                    </div>
+                    <p class="review-text">{{ review.text_content or review.comment }}</p>
+                    <small style="color: var(--text-secondary);">{{ review.created_at.strftime('%Y-%m-%d') if review.created_at }}</small>
+                </div>
+            {% endfor %}
+        {% else %}
+            <p style="color: var(--text-secondary); text-align: center; padding: 40px;">No reviews yet. Be the first to review!</p>
+        {% endif %}
+    </div>
+</div>
+
+<script>
+let isFollowing = false;
+
+function toggleFollow() {
+    const btn = event.target.closest('button');
+    isFollowing = !isFollowing;
+    btn.classList.toggle('following');
+    btn.innerHTML = isFollowing ? '<i class="fas fa-heart-solid"></i> Following' : '<i class="fas fa-heart"></i> Follow';
+}
+</script>
+{% endblock %}

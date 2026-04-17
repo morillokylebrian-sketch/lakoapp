@@ -114,3 +114,30 @@ class ImageService:
             folder = 'compressed'
         
         return os.path.join(config.UPLOAD_FOLDER, folder, upload_type, filename)
+    
+    @staticmethod
+    def upload_image(file, upload_type='general'):
+        """Upload an image file and return the URL path"""
+        if not file or not ImageService.allowed_file(file.filename):
+            return None
+        
+        try:
+            # Save all versions (original, compressed, thumbnail)
+            original_result = ImageService.save_original(file, upload_type)
+            if not original_result['success']:
+                return None
+            
+            # Reset file pointer for compression
+            file.seek(0)
+            
+            # Compress and create thumbnail
+            compress_result = ImageService.compress(file, upload_type)
+            if not compress_result['success']:
+                return None
+            
+            # Return the compressed image URL
+            filename = compress_result['filename']
+            return f"/uploads/compressed/{upload_type}/{filename}"
+        except Exception as e:
+            print(f"Error uploading image: {str(e)}")
+            return None

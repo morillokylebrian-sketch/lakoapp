@@ -1,0 +1,318 @@
+{% extends "base.html" %}
+
+{% block title %}Search Results - Lako{% endblock %}
+
+{% block extra_style %}
+<style>
+    .search-container { max-width: 1200px; margin: 0 auto; padding: 20px; }
+    .search-header { 
+        display: flex; 
+        gap: 16px; 
+        margin-bottom: 24px; 
+        align-items: flex-end;
+    }
+    .search-input-group {
+        flex: 1;
+        display: flex;
+        gap: 8px;
+    }
+    .search-input-group input {
+        flex: 1;
+        padding: 12px 16px;
+        border: 2px solid var(--border);
+        border-radius: 12px;
+        font-size: 16px;
+    }
+    .search-input-group button {
+        padding: 12px 24px;
+    }
+    .filter-group {
+        display: flex;
+        gap: 12px;
+        margin-bottom: 24px;
+        flex-wrap: wrap;
+    }
+    .filter-tag {
+        padding: 8px 16px;
+        border: 1px solid var(--border);
+        border-radius: 20px;
+        cursor: pointer;
+        background: transparent;
+        font-size: 14px;
+        transition: all 0.2s;
+    }
+    .filter-tag.active {
+        background: var(--primary);
+        color: white;
+        border-color: var(--primary);
+    }
+    .filter-tag:hover {
+        border-color: var(--primary);
+    }
+    .results-layout {
+        display: grid;
+        grid-template-columns: 200px 1fr;
+        gap: 24px;
+    }
+    .sidebar {
+        background: var(--surface);
+        border-radius: 16px;
+        padding: 20px;
+        border: 1px solid var(--border);
+        height: fit-content;
+    }
+    .sidebar-section {
+        margin-bottom: 24px;
+    }
+    .sidebar-section:last-child {
+        margin-bottom: 0;
+    }
+    .sidebar-title {
+        font-weight: 600;
+        margin-bottom: 12px;
+        font-size: 14px;
+    }
+    .sidebar-option {
+        display: flex;
+        align-items: center;
+        gap: 8px;
+        padding: 8px 0;
+        cursor: pointer;
+        font-size: 14px;
+    }
+    .sidebar-option input {
+        cursor: pointer;
+    }
+    .results-container {
+        display: grid;
+        gap: 16px;
+    }
+    .result-item {
+        display: flex;
+        gap: 16px;
+        background: var(--surface);
+        border-radius: 16px;
+        padding: 16px;
+        border: 1px solid var(--border);
+        cursor: pointer;
+        transition: all 0.2s;
+    }
+    .result-item:hover {
+        border-color: var(--primary);
+        box-shadow: 0 4px 12px rgba(15, 92, 47, 0.1);
+    }
+    .result-image {
+        width: 100px;
+        height: 100px;
+        background: linear-gradient(135deg, #0f5c2f 0%, #0a4a25 100%);
+        border-radius: 12px;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        color: white;
+        font-weight: 600;
+        flex-shrink: 0;
+    }
+    .result-info {
+        flex: 1;
+    }
+    .result-name {
+        font-weight: 600;
+        font-size: 16px;
+        margin-bottom: 4px;
+    }
+    .result-vendor {
+        font-size: 13px;
+        color: var(--text-secondary);
+        margin-bottom: 8px;
+    }
+    .result-meta {
+        display: flex;
+        gap: 16px;
+        font-size: 12px;
+        color: var(--text-secondary);
+        margin-bottom: 8px;
+    }
+    .result-price {
+        font-weight: 600;
+        color: var(--primary);
+        font-size: 16px;
+    }
+    .pagination {
+        display: flex;
+        justify-content: center;
+        gap: 8px;
+        margin-top: 32px;
+    }
+    .pagination button {
+        padding: 8px 12px;
+        border: 1px solid var(--border);
+        background: transparent;
+        border-radius: 8px;
+        cursor: pointer;
+        font-weight: 500;
+        transition: all 0.2s;
+    }
+    .pagination button.active {
+        background: var(--primary);
+        color: white;
+        border-color: var(--primary);
+    }
+    .no-results {
+        text-align: center;
+        padding: 60px 20px;
+        color: var(--text-secondary);
+    }
+    .no-results-icon {
+        font-size: 48px;
+        margin-bottom: 16px;
+    }
+    @media (max-width: 768px) {
+        .results-layout {
+            grid-template-columns: 1fr;
+        }
+        .sidebar {
+            display: none;
+        }
+        .search-header {
+            flex-direction: column;
+        }
+    }
+</style>
+{% endblock %}
+
+{% block content %}
+<div class="search-container">
+    <!-- Search Header -->
+    <div class="search-header">
+        <div class="search-input-group">
+            <input type="text" id="searchInput" placeholder="Search vendors, products, categories..." value="{{ query or '' }}">
+            <button class="btn btn-primary" onclick="performSearch()">🔍 Search</button>
+        </div>
+    </div>
+    
+    <!-- Quick Filters -->
+    <div class="filter-group">
+        <button class="filter-tag active">All Results</button>
+        <button class="filter-tag">Vendors</button>
+        <button class="filter-tag">Products</button>
+        <button class="filter-tag">Near Me</button>
+    </div>
+    
+    <!-- Results Layout -->
+    <div class="results-layout">
+        <!-- Sidebar Filters -->
+        <aside class="sidebar">
+            <div class="sidebar-section">
+                <div class="sidebar-title">Category</div>
+                <label class="sidebar-option">
+                    <input type="checkbox" checked> All
+                </label>
+                <label class="sidebar-option">
+                    <input type="checkbox"> Electronics
+                </label>
+                <label class="sidebar-option">
+                    <input type="checkbox"> Fashion
+                </label>
+                <label class="sidebar-option">
+                    <input type="checkbox"> Food
+                </label>
+                <label class="sidebar-option">
+                    <input type="checkbox"> Services
+                </label>
+            </div>
+            
+            <div class="sidebar-section">
+                <div class="sidebar-title">Distance</div>
+                <label class="sidebar-option">
+                    <input type="radio" name="distance" checked> Within 5 km
+                </label>
+                <label class="sidebar-option">
+                    <input type="radio" name="distance"> Within 10 km
+                </label>
+                <label class="sidebar-option">
+                    <input type="radio" name="distance"> Within 25 km
+                </label>
+                <label class="sidebar-option">
+                    <input type="radio" name="distance"> Any
+                </label>
+            </div>
+            
+            <div class="sidebar-section">
+                <div class="sidebar-title">Rating</div>
+                <label class="sidebar-option">
+                    <input type="checkbox"> 4+ Stars
+                </label>
+                <label class="sidebar-option">
+                    <input type="checkbox"> 3+ Stars
+                </label>
+                <label class="sidebar-option">
+                    <input type="checkbox"> 2+ Stars
+                </label>
+            </div>
+            
+            <div class="sidebar-section">
+                <div class="sidebar-title">Price Range</div>
+                <input type="range" min="0" max="10000" step="100" style="width: 100%;">
+                <div style="display: flex; justify-content: space-between; margin-top: 8px; font-size: 12px;">
+                    <span>₱0</span>
+                    <span>₱10,000</span>
+                </div>
+            </div>
+        </aside>
+        
+        <!-- Results -->
+        <div class="results-container">
+            {% if results %}
+                {% for result in results %}
+                    <div class="result-item" onclick="window.location.href='{{ result.link }}'">
+                        <div class="result-image">{{ result.type[0].upper() }}</div>
+                        <div class="result-info">
+                            <div class="result-name">{{ result.name }}</div>
+                            <div class="result-vendor">{{ result.vendor }}</div>
+                            <div class="result-meta">
+                                <span>⭐ {{ result.rating or '0' }} • {{ result.category }}</span>
+                                {% if result.distance %}
+                                    <span>📍 {{ result.distance }} km away</span>
+                                {% endif %}
+                            </div>
+                            {% if result.price %}
+                                <div class="result-price">₱{{ "{:,}".format(result.price) }}</div>
+                            {% endif %}
+                        </div>
+                    </div>
+                {% endfor %}
+                
+                <!-- Pagination -->
+                <div class="pagination">
+                    <button>← Previous</button>
+                    <button class="active">1</button>
+                    <button>2</button>
+                    <button>3</button>
+                    <button>Next →</button>
+                </div>
+            {% else %}
+                <div class="no-results">
+                    <div class="no-results-icon">🔍</div>
+                    <h2>No results found</h2>
+                    <p>Try searching with different keywords or adjust your filters</p>
+                </div>
+            {% endif %}
+        </div>
+    </div>
+</div>
+
+<script>
+function performSearch() {
+    const query = document.getElementById('searchInput').value;
+    if (query.trim()) {
+        window.location.href = `/search?q=${encodeURIComponent(query)}`;
+    }
+}
+
+// Allow Enter key in search input
+document.getElementById('searchInput')?.addEventListener('keypress', (e) => {
+    if (e.key === 'Enter') performSearch();
+});
+</script>
+{% endblock %}

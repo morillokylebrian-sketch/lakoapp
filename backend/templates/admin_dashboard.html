@@ -1,0 +1,192 @@
+{% extends "base.html" %}
+
+{% block title %}Lako - Admin Dashboard{% endblock %}
+
+{% block extra_style %}
+<style>
+    .header {
+        display: flex;
+        align-items: center;
+        justify-content: space-between;
+        padding: 16px 24px;
+        margin: 16px;
+        background: var(--surface);
+        border-radius: 60px;
+        box-shadow: var(--shadow);
+        border: 1px solid var(--border);
+    }
+    .logo { font-size: 24px; font-weight: 700; color: var(--primary); }
+    .admin-badge {
+        display: flex;
+        align-items: center;
+        gap: 8px;
+        background: var(--primary);
+        color: white;
+        padding: 8px 16px;
+        border-radius: 40px;
+        font-size: 13px;
+        font-weight: 600;
+    }
+    .dashboard-layout { display: flex; gap: 20px; padding: 20px; }
+    .sidebar { width: 280px; }
+    .nav-item {
+        display: flex;
+        align-items: center;
+        gap: 12px;
+        padding: 12px 16px;
+        border-radius: 12px;
+        color: var(--text-secondary);
+        cursor: pointer;
+        transition: all 0.2s;
+    }
+    .nav-item:hover { background: rgba(15, 92, 47, 0.08); color: var(--primary); }
+    .nav-item.active { background: var(--primary); color: white; }
+    .main { flex: 1; }
+    .stats-grid { display: grid; grid-template-columns: repeat(4, 1fr); gap: 16px; margin-bottom: 24px; }
+    .stat-card {
+        background: var(--surface);
+        border-radius: 20px;
+        padding: 24px;
+        text-align: center;
+        border: 1px solid var(--border);
+    }
+    .stat-value { font-size: 32px; font-weight: 700; color: var(--primary); }
+    .stat-label { font-size: 13px; color: var(--text-secondary); margin-top: 8px; }
+    .table-row {
+        display: grid;
+        grid-template-columns: 2fr 1fr 1fr 100px;
+        padding: 12px;
+        border-bottom: 1px solid var(--border);
+        align-items: center;
+    }
+    .status-badge {
+        display: inline-block;
+        padding: 4px 12px;
+        border-radius: 20px;
+        font-size: 12px;
+        font-weight: 600;
+    }
+    .status-badge.active { background: rgba(16, 185, 129, 0.15); color: #059669; }
+    .status-badge.inactive { background: rgba(220, 38, 38, 0.15); color: #dc2626; }
+    @media (max-width: 768px) {
+        .dashboard-layout { flex-direction: column; }
+        .sidebar { width: 100%; }
+        .stats-grid { grid-template-columns: repeat(2, 1fr); }
+    }
+</style>
+{% endblock %}
+
+{% block content %}
+<div class="header">
+    <div class="logo">🛡️ lako / admin</div>
+    <div style="display: flex; gap: 12px; align-items: center;">
+        <span class="admin-badge"><i class="fas fa-user-shield"></i> Administrator</span>
+        <button class="btn btn-danger" onclick="logout()"><i class="fas fa-sign-out-alt"></i> Logout</button>
+    </div>
+</div>
+
+<div class="dashboard-layout">
+    <div class="sidebar glass-card">
+        <div class="nav-item active" onclick="showSection('overview')"><i class="fas fa-chart-line"></i> Overview</div>
+        <div class="nav-item" onclick="showSection('users')"><i class="fas fa-users"></i> Users</div>
+        <div class="nav-item" onclick="showSection('vendors')"><i class="fas fa-store"></i> Vendors</div>
+        <div class="nav-item" onclick="showSection('products')"><i class="fas fa-box"></i> Products</div>
+        <div class="nav-item" onclick="showSection('reviews')"><i class="fas fa-star"></i> Reviews</div>
+        <div class="nav-item" onclick="showSection('reports')"><i class="fas fa-flag"></i> Reports</div>
+        <div class="nav-item" onclick="showSection('settings')"><i class="fas fa-cog"></i> Settings</div>
+    </div>
+    
+    <div class="main">
+        <div id="overview" class="section">
+            <h2>Dashboard Overview</h2>
+            <div class="stats-grid">
+                <div class="stat-card">
+                    <div class="stat-value">{{ stats.total_users or 0 }}</div>
+                    <div class="stat-label">Total Users</div>
+                </div>
+                <div class="stat-card">
+                    <div class="stat-value">{{ stats.total_vendors or 0 }}</div>
+                    <div class="stat-label">Vendors</div>
+                </div>
+                <div class="stat-card">
+                    <div class="stat-value">{{ stats.total_products or 0 }}</div>
+                    <div class="stat-label">Products</div>
+                </div>
+                <div class="stat-card">
+                    <div class="stat-value">{{ stats.total_views or 0 }}</div>
+                    <div class="stat-label">Total Views</div>
+                </div>
+            </div>
+            
+            <div class="glass-card">
+                <h3 style="margin-bottom: 16px;">Quick Actions</h3>
+                <div style="display: flex; gap: 12px; flex-wrap: wrap;">
+                    <button class="btn btn-primary" onclick="showSection('users')"><i class="fas fa-users"></i> Manage Users</button>
+                    <button class="btn btn-outline" onclick="showSection('vendors')"><i class="fas fa-store"></i> View Vendors</button>
+                    <button class="btn btn-outline" onclick="showSection('reports')"><i class="fas fa-flag"></i> Review Reports</button>
+                </div>
+            </div>
+        </div>
+        
+        <div id="users" class="section" style="display: none;">
+            <h2>User Management ({{ users|length }})</h2>
+            <div class="glass-card">
+                {% if users %}
+                    {% for user in users %}
+                        <div class="table-row">
+                            <span><strong>{{ user.full_name or user.email }}</strong><br><small>{{ user.email }}</small></span>
+                            <span><span class="status-badge {% if not user.is_suspended %}active{% else %}inactive{% endif %}">{{ 'Active' if not user.is_suspended else 'Suspended' }}</span></span>
+                            <span>{{ user.role }}</span>
+                            <span>
+                                <form method="POST" style="display: inline;">
+                                    <button type="submit" formaction="/admin/users/{{ user.id }}/toggle" class="btn btn-outline">{% if user.is_suspended %}Activate{% else %}Suspend{% endif %}</button>
+                                </form>
+                            </span>
+                        </div>
+                    {% endfor %}
+                {% else %}
+                    <p style="padding: 20px; text-align: center;">No users found</p>
+                {% endif %}
+            </div>
+        </div>
+        
+        <div id="vendors" class="section" style="display: none;">
+            <h2>Vendor Management ({{ vendors|length }})</h2>
+            <div class="glass-card">
+                {% if vendors %}
+                    {% for vendor in vendors %}
+                        <div class="table-row">
+                            <span><strong>{{ vendor.business_name or vendor.name }}</strong><br><small>{{ vendor.email }}</small></span>
+                            <span>⭐ {{ "%.1f"|format(vendor.rating or 0) }}</span>
+                            <span><span class="status-badge {% if vendor.is_active %}active{% else %}inactive{% endif %}">{{ 'Active' if vendor.is_active else 'Inactive' }}</span></span>
+                            <span>
+                                <form method="POST" style="display: inline;">
+                                    <button type="submit" formaction="/admin/vendors/{{ vendor.id }}/toggle" class="btn btn-outline">Toggle</button>
+                                </form>
+                            </span>
+                        </div>
+                    {% endfor %}
+                {% else %}
+                    <p style="padding: 20px; text-align: center;">No vendors found</p>
+                {% endif %}
+            </div>
+        </div>
+        
+        <div id="settings" class="section" style="display: none;">
+            <h2>Settings</h2>
+            <div class="glass-card">
+                <p style="color: var(--text-secondary);">System settings coming soon...</p>
+            </div>
+        </div>
+    </div>
+</div>
+
+<script>
+function showSection(section) {
+    document.querySelectorAll('.section').forEach(s => s.style.display = 'none');
+    document.querySelectorAll('.nav-item').forEach(n => n.classList.remove('active'));
+    document.getElementById(section).style.display = 'block';
+    event.target.closest('.nav-item').classList.add('active');
+}
+</script>
+{% endblock %}

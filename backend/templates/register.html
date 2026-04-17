@@ -1,0 +1,81 @@
+{% extends "base.html" %}
+
+{% block title %}Lako - Register{% endblock %}
+
+{% block extra_style %}
+<style>
+    .register-container { max-width: 500px; margin: 40px auto; }
+    .register-card { background: var(--surface); border-radius: var(--radius); padding: 40px; box-shadow: var(--shadow); border: 1px solid var(--border); }
+    .register-logo { text-align: center; font-size: 32px; font-weight: 700; color: var(--primary); margin-bottom: 24px; }
+    .register-title { text-align: center; font-size: 20px; font-weight: 600; margin-bottom: 8px; }
+    .register-subtitle { text-align: center; color: var(--text-secondary); margin-bottom: 24px; }
+    .form-row { display: grid; grid-template-columns: 1fr 1fr; gap: 16px; }
+    .form-group { margin-bottom: 16px; }
+    .register-button { width: 100%; margin-top: 24px; }
+    .login-link { text-align: center; margin-top: 20px; color: var(--text-secondary); }
+    .login-link a { color: var(--primary); text-decoration: none; font-weight: 600; }
+</style>
+{% endblock %}
+
+{% block content %}
+<div class="container">
+    <div class="register-container">
+        <div class="register-card">
+            <div class="register-logo">🍜 lako</div>
+            <h1 class="register-title">Create Account</h1>
+            <p class="register-subtitle">Join the community</p>
+            
+            {% with messages = get_flashed_messages(category_filter=['error']) %}
+                {% if messages %}
+                    {% for message in messages %}
+                        <div class="alert alert-error">{{ message }}</div>
+                    {% endfor %}
+                {% endif %}
+            {% endwith %}
+            
+            <form method="POST" action="/register">
+                <div class="form-row">
+                    <div class="form-group">
+                        <label for="first_name">First Name</label>
+                        <input type="text" id="first_name" name="first_name" required>
+                    </div>
+                    <div class="form-group">
+                        <label for="last_name">Last Name</label>
+                        <input type="text" id="last_name" name="last_name" required>
+                    </div>
+                </div>
+                
+                <div class="form-group">
+                    <label for="email">Email</label>
+                    <input type="email" id="email" name="email" required>
+                </div>
+                
+                <div class="form-group">
+                    <label for="password">Password</label>
+                    <input type="password" id="password" name="password" required>
+                </div>
+                
+                <div class="form-group">
+                    <label for="confirm_password">Confirm Password</label>
+                    <input type="password" id="confirm_password" name="confirm_password" required>
+                </div>
+                
+                <div class="form-group">
+                    <label for="role">I want to join as:</label>
+                    <select id="role" name="role" required>
+                        <option value="">Select your role</option>
+                        <option value="customer">Customer</option>
+                        <option value="vendor">Vendor</option>
+                    </select>
+                </div>
+                
+                <button type="submit" class="btn btn-primary register-button">Create Account</button>
+            </form>
+            
+            <div class="login-link">
+                Already have an account? <a href="/login">Sign in</a>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}

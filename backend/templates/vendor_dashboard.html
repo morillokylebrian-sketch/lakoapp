@@ -1,0 +1,159 @@
+{% extends "base.html" %}
+
+{% block title %}Lako - Vendor Dashboard{% endblock %}
+
+{% block extra_style %}
+<style>
+    .header {
+        display: flex;
+        align-items: center;
+        justify-content: space-between;
+        padding: 16px 24px;
+        margin: 16px;
+        background: var(--surface);
+        border-radius: 60px;
+        box-shadow: var(--shadow);
+        border: 1px solid var(--border);
+    }
+    .logo { font-size: 24px; font-weight: 700; color: var(--primary); }
+    .header-actions { display: flex; gap: 12px; }
+    .dashboard-layout { display: flex; gap: 20px; padding: 20px; }
+    .sidebar { width: 280px; }
+    .nav-item {
+        display: flex;
+        align-items: center;
+        gap: 12px;
+        padding: 12px 16px;
+        border-radius: 12px;
+        color: var(--text-secondary);
+        cursor: pointer;
+        transition: all 0.2s;
+    }
+    .nav-item:hover { background: rgba(15, 92, 47, 0.08); color: var(--primary); }
+    .nav-item.active { background: var(--primary); color: white; }
+    .main { flex: 1; }
+    .stats-grid { display: grid; grid-template-columns: repeat(4, 1fr); gap: 16px; margin-bottom: 24px; }
+    .stat-card {
+        background: var(--surface);
+        border-radius: 20px;
+        padding: 24px;
+        text-align: center;
+        border: 1px solid var(--border);
+    }
+    .stat-value { font-size: 28px; font-weight: 700; color: var(--primary); }
+    .stat-label { font-size: 13px; color: var(--text-secondary); margin-top: 8px; }
+    .table-row {
+        display: grid;
+        grid-template-columns: 2fr 1fr 1fr 100px;
+        padding: 12px;
+        border-bottom: 1px solid var(--border);
+        align-items: center;
+    }
+    @media (max-width: 768px) {
+        .dashboard-layout { flex-direction: column; }
+        .sidebar { width: 100%; }
+        .stats-grid { grid-template-columns: repeat(2, 1fr); }
+    }
+</style>
+{% endblock %}
+
+{% block content %}
+<div class="header">
+    <div class="logo">lako / vendor</div>
+    <div class="header-actions">
+        <button class="btn btn-outline" onclick="window.location.href='/profile'"><i class="fas fa-user"></i></button>
+        <button class="btn btn-danger" onclick="logout()"><i class="fas fa-sign-out-alt"></i> Exit</button>
+    </div>
+</div>
+
+<div class="dashboard-layout">
+    <div class="sidebar glass-card">
+        <div class="nav-item active" onclick="showSection('overview')"><i class="fas fa-chart-line"></i> Overview</div>
+        <div class="nav-item" onclick="showSection('catalog')"><i class="fas fa-box"></i> Catalog</div>
+        <div class="nav-item" onclick="showSection('traffic')"><i class="fas fa-fire"></i> Traffic</div>
+        <div class="nav-item" onclick="showSection('inquiries')"><i class="fas fa-comment"></i> Inquiries</div>
+        <div class="nav-item" onclick="showSection('reviews')"><i class="fas fa-star"></i> Reviews</div>
+        <div class="nav-item" onclick="showSection('analytics')"><i class="fas fa-chart-bar"></i> Analytics</div>
+        <div class="nav-item" onclick="showSection('settings')"><i class="fas fa-cog"></i> Settings</div>
+    </div>
+    
+    <div class="main">
+        <div id="overview" class="section">
+            <h2>Dashboard Overview</h2>
+            <div class="stats-grid">
+                <div class="stat-card">
+                    <div class="stat-value">₱{{ "{:,}".format(dashboard.total_revenue or 0) }}</div>
+                    <div class="stat-label">Revenue</div>
+                </div>
+                <div class="stat-card">
+                    <div class="stat-value">{{ dashboard.total_products or 0 }}</div>
+                    <div class="stat-label">Products</div>
+                </div>
+                <div class="stat-card">
+                    <div class="stat-value">{{ dashboard.total_posts or 0 }}</div>
+                    <div class="stat-label">Posts</div>
+                </div>
+                <div class="stat-card">
+                    <div class="stat-value">{{ "%.1f"|format(dashboard.average_rating or 0) }}⭐</div>
+                    <div class="stat-label">Rating</div>
+                </div>
+            </div>
+            
+            <div class="glass-card">
+                <h3 style="margin-bottom: 16px;">Recent Products</h3>
+                {% if recent_products %}
+                    {% for product in recent_products %}
+                        <div class="table-row">
+                            <span><strong>{{ product.name }}</strong></span>
+                            <span>{{ product.category or '-' }}</span>
+                            <span>₱{{ "{:,}".format(product.price or 0) }}</span>
+                            <span><a href="/edit-product/{{ product.id }}" class="btn btn-outline">Edit</a></span>
+                        </div>
+                    {% endfor %}
+                {% else %}
+                    <p style="padding: 20px; text-align: center; color: var(--text-secondary);">No products yet</p>
+                {% endif %}
+            </div>
+        </div>
+        
+        <div id="catalog" class="section" style="display: none;">
+            <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 20px;">
+                <h2>Product Catalog</h2>
+                <button class="btn btn-primary" onclick="window.location.href='/add-product'">+ Add Product</button>
+            </div>
+            <div class="glass-card">
+                {% if products %}
+                    {% for product in products %}
+                        <div class="table-row">
+                            <span><strong>{{ product.name }}</strong></span>
+                            <span>{{ product.category or '-' }}</span>
+                            <span>₱{{ "{:,}".format(product.price or 0) }}</span>
+                            <span>
+                                <a href="/edit-product/{{ product.id }}" class="btn btn-outline">Edit</a>
+                            </span>
+                        </div>
+                    {% endfor %}
+                {% else %}
+                    <p style="padding: 20px; text-align: center;">No products</p>
+                {% endif %}
+            </div>
+        </div>
+        
+        <div id="settings" class="section" style="display: none;">
+            <h2>Settings</h2>
+            <div class="glass-card">
+                <p style="color: var(--text-secondary);">Settings coming soon...</p>
+            </div>
+        </div>
+    </div>
+</div>
+
+<script>
+function showSection(section) {
+    document.querySelectorAll('.section').forEach(s => s.style.display = 'none');
+    document.querySelectorAll('.nav-item').forEach(n => n.classList.remove('active'));
+    document.getElementById(section).style.display = 'block';
+    event.target.closest('.nav-item').classList.add('active');
+}
+</script>
+{% endblock %}
